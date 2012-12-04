@@ -10,78 +10,141 @@
  */
 class OCookie
 {
+    /**
+     * @var  array  OCookie instances
+     */
+    public static $instances = array();
+
+    /**
+     * Creates a singleton OCookie of a given name.
+     *
+     *     $cookie = OCookie::instance('my_cookie');
+     *
+     * @param   string   name of a cookie
+     * @param   array    configuration
+     * @return  OCookie
+     */
+    public static function instance($name, array $config = NULL)
+    {
+        if ( ! isset(OCookie::$instances[$name]))
+        {
+            // Create a new cookie instance
+            OCookie::$instances[$name] = new OCookie($name, $config);
+        }
+
+        return OCookie::$instances[$name];
+    }
+
 	/**
-	 * @var  string  Magic salt to add to the cookie
+	 * @var  string  Cookie name
 	 */
-	public static $salt = NULL;
+	protected $_name;
 
 	/**
 	 * @var  integer  Number of seconds before the cookie expires
 	 */
-	public static $expiration = 0;
+	protected $_lifetime = 0;
 
 	/**
 	 * @var  string  Restrict the path that the cookie is available to
 	 */
-	public static $path = '/';
+	protected $_path = '';
 
 	/**
 	 * @var  string  Restrict the domain that the cookie is available to
 	 */
-	public static $domain = NULL;
+	protected $_domain = NULL;
 
 	/**
 	 * @var  boolean  Only transmit cookies over secure connections
 	 */
-	public static $secure = FALSE;
+	protected $_secure = FALSE;
 
 	/**
 	 * @var  boolean  Only transmit cookies over HTTP, disabling Javascript access
 	 */
-	public static $httponly = FALSE;
+	protected $_httponly = TRUE;
+
+    /**
+     * @var  string   Cookie value
+     */
+    protected $_value;
+
+    /**
+     * Initiates the cookie.
+     *
+     * [!!] Cookies can only be created using the [OCookie::instance] method.
+     *
+     * @param   string  name
+     * @param   array   configuration
+     * @return  OCookie
+     * @uses    Kohana::$config
+     */
+    protected function __construct($name, array $config = NULL)
+    {
+        // Cookie name
+        $this->_name = (string) $name;
+
+        // Load configuration
+        if ($config === NULL)
+        {
+            $config = Kohana::$config->load('ocookie')->get($name);
+        }
+
+        if (isset($config['lifetime']))
+        {
+            // Cookie lifetime
+            $this->_lifetime = (int) $config['lifetime'];
+        }
+
+        if (isset($config['path']))
+        {
+            $this->_path = (string) $config['path'];
+        }
+
+        if (isset($config['domain']))
+        {
+            $this->_domain = (string) $config['domain'];
+        }
+
+        if (isset($config['secure']))
+        {
+            $this->_secure = (bool) $config['secure'];
+        }
+
+        if (isset($config['httponly']))
+        {
+            $this->_httponly = (bool) $config['httponly'];
+        }
+
+        if (isset($config['encrypted']))
+        {
+            if ($config['encrypted'] === TRUE)
+            {
+                // Use the default Encrypt instance
+                $config['encrypted'] = 'default';
+            }
+
+            // Enable or disable encryption of data
+            $this->_encrypted = $config['encrypted'];
+        }
+
+        // Read the cookie
+        $this->_read();
+    }
 
 	/**
-	 * Gets the value of a signed cookie. Cookies without signatures will not
-	 * be returned. If the cookie signature is present, but invalid, the cookie
-	 * will be deleted.
+	 * Gets the value of the cookie.
 	 *
-	 *     // Get the "theme" cookie, or use "blue" if the cookie does not exist
-	 *     $theme = Cookie::get('theme', 'blue');
+	 *     // Get the cookie value, or use "blue" if the cookie does not exist
+	 *     $cookie->get('blue');
 	 *
-	 * @param   string  cookie name
 	 * @param   mixed   default value to return
 	 * @return  string
 	 */
-	public static function get($key, $default = NULL)
+	public function get($default = NULL)
 	{
-		if ( ! isset($_COOKIE[$key]))
-		{
-			// The cookie does not exist
-			return $default;
-		}
-
-		// Get the cookie value
-		$cookie = $_COOKIE[$key];
-
-		// Find the position of the split between salt and contents
-		$split = strlen(Cookie::salt($key, NULL));
-
-		if (isset($cookie[$split]) AND $cookie[$split] === '~')
-		{
-			// Separate the salt and the value
-			list ($hash, $value) = explode('~', $cookie, 2);
-
-			if (Cookie::salt($key, $value) === $hash)
-			{
-				// Cookie signature is valid
-				return $value;
-			}
-
-			// The cookie signature is invalid, delete it
-			Cookie::delete($key);
-		}
-
-		return $default;
+		return isset($this->_value) ? $this->_value : $default;
 	}
 
 	/**
@@ -89,73 +152,89 @@ class OCookie
 	 * automatic serialization will be performed!
 	 *
 	 *     // Set the "theme" cookie
-	 *     Cookie::set('theme', 'red');
+     *     $cookie->set('red');
 	 *
-	 * @param   string   name of cookie
 	 * @param   string   value of cookie
 	 * @param   integer  lifetime in seconds
 	 * @return  boolean
 	 * @uses    Cookie::salt
 	 */
-	public static function set($name, $value, $expiration = NULL)
+	public function set($value, $lifetime = NULL)
 	{
-		if ($expiration === NULL)
+        $this->_value = $value;
+
+		if ($lifetime === NULL)
 		{
-			// Use the default expiration
-			$expiration = Cookie::$expiration;
+			// Use the default lifetime
+			$lifetime = $this->_lifetime;
 		}
 
-		if ($expiration !== 0)
+		if ($lifetime !== 0)
 		{
-			// The expiration is expected to be a UNIX timestamp
-			$expiration += time();
+			// The lifetime is expected to be a UNIX timestamp
+			$lifetime += time();
 		}
 
 		// Add the salt to the cookie value
-		$value = Cookie::salt($name, $value).'~'.$value;
+		$value = Cookie::salt($this->_name, $value).'~'.$value;
 
-		return setcookie($name, $value, $expiration, Cookie::$path, Cookie::$domain, Cookie::$secure, Cookie::$httponly);
+		return setcookie($this->_name, $value, $this->_lifetime, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
 	}
 
 	/**
 	 * Deletes a cookie by making the value NULL and expiring it.
 	 *
-	 *     Cookie::delete('theme');
+	 *     $cookie->delete();
 	 *
 	 * @param   string   cookie name
 	 * @return  boolean
-	 * @uses    Cookie::set
 	 */
-	public static function delete($name)
+	public function delete()
 	{
 		// Remove the cookie
-		unset($_COOKIE[$name]);
+		unset($_COOKIE[$this->_name]);
 
 		// Nullify the cookie and make it expire
-		return setcookie($name, NULL, -86400, Cookie::$path, Cookie::$domain, Cookie::$secure, Cookie::$httponly);
+		return setcookie($this->_name, NULL, -86400, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
 	}
 
-	/**
-	 * Generates a salt string for a cookie based on the name and value.
-	 *
-	 *     $salt = Cookie::salt('theme', 'red');
-	 *
-	 * @param   string   name of cookie
-	 * @param   string   value of cookie
-	 * @return  string
-	 */
-	public static function salt($name, $value)
-	{
-		// Require a valid salt
-		if ( ! Cookie::$salt)
+    /**
+     * Reads a signed cookie's value. Cookies without signatures will not be
+     * read. If the cookie signature is present, but invalid, the cookie will be
+     * deleted.
+     *
+     * @return void
+     * @uses Cookie::salt
+     */
+    protected function _read()
+    {
+		if ( ! isset($_COOKIE[$this->_name]))
 		{
-			throw new Kohana_Exception('A valid cookie salt is required. Please set Cookie::$salt.');
+			// The cookie does not exist
+			$this->_value = NULL;
 		}
 
-		// Determine the user agent
-		$agent = isset($_SERVER['HTTP_USER_AGENT']) ? strtolower($_SERVER['HTTP_USER_AGENT']) : 'unknown';
+		// Get the cookie value
+		$cookie = $_COOKIE[$this->_name];
 
-		return sha1($agent.$name.$value.Cookie::$salt);
-	}
+		// Find the position of the split between salt and contents
+		$split = strlen(Cookie::salt($this->_name, NULL));
 
+		if (isset($cookie[$split]) AND $cookie[$split] === '~')
+		{
+			// Separate the salt and the value
+			list ($hash, $value) = explode('~', $cookie, 2);
+
+			if (Cookie::salt($this->_name, $value) === $hash)
+			{
+				// Cookie signature is valid
+				$this->_value = $value;
+			}
+
+			// The cookie signature is invalid, delete it
+			$this->delete();
+		}
+
+		$this->_value = NULL;
+    }
 }
