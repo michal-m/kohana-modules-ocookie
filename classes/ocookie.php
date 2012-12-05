@@ -53,7 +53,7 @@ class OCookie
 	/**
 	 * @var  string  Restrict the domain that the cookie is available to
 	 */
-	protected $_domain = NULL;
+	protected $_domain;
 
 	/**
 	 * @var  boolean  Only transmit cookies over secure connections
@@ -64,6 +64,11 @@ class OCookie
 	 * @var  boolean  Only transmit cookies over HTTP, disabling Javascript access
 	 */
 	protected $_httponly = TRUE;
+
+    /**
+     * @var  boolean  Encrypt cookie
+     */
+    protected $_encrypted = FALSE;
 
     /**
      * @var  string   Cookie value
@@ -94,6 +99,11 @@ class OCookie
         if ($config === NULL)
         {
             $config = Kohana::$config->load('ocookie')->get($name);
+
+            if ($config === NULL)
+            {
+                $config = Kohana::$config->load('ocookie')->get('default');
+            }
         }
 
         if (isset($config['lifetime']))
@@ -110,6 +120,10 @@ class OCookie
         if (isset($config['domain']))
         {
             $this->_domain = (string) $config['domain'];
+        }
+        else
+        {
+            $this->_domain = (isset($_SERVER['HTTP_HOST'])) ? $_SERVER['HTTP_HOST'] : '';
         }
 
         if (isset($config['secure']))

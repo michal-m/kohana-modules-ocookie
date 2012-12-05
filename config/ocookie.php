@@ -8,17 +8,19 @@ return array(
     /**
      * The following options are available:
      *
-     * integer  lifetime    session lifetime in seconds
+     * integer  lifetime    cookie lifetime in seconds
      * string   path        cookie path
      * string   domain      cookie domain
      * boolean  secure      whether the cookie is to be served only over HTTPS
+     * boolean  httponly    whether the cookie is to be available to JS or not
      * boolean  encrypted   whether to encrypt session data
      */
-    'cookie_name' => array(
-        'lifetime'      => 43200,
-        'path'          => '',
-        'domain'        => '',
-        'secure'        => FALSE,
-        'httponly'      => TRUE,
+    'default' => array(
+        'lifetime'      => Cookie::$expiration,
+        'path'          => Cookie::$path,
+        'domain'        => Cookie::$domain,
+        'secure'        => Cookie::$secure,
+        'httponly'      => Cookie::$httponly,
+        'encrypted'     => FALSE,   // or encryption setting name
     ),
 );
