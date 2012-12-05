@@ -205,8 +205,8 @@ class OCookie
 	}
 
 	/**
-	 * Sets a signed cookie. Note that all cookie values must be strings and no
-	 * automatic serialization will be performed!
+	 * Sets a signed cookie. Note that all cookie values must be strings.
+     * Automatic serialization is possible if enabled in cookie's config.
 	 *
 	 *     // Set the "theme" cookie
      *     $cookie->set('red');
@@ -272,8 +272,9 @@ class OCookie
      * read. If the cookie signature is present, but invalid, the cookie will be
      * deleted.
      *
-     * @return void
-     * @uses Cookie::salt
+     * @return  void
+     * @uses    Cookie::salt
+     * @uses    Encrypt::decode
      */
     protected function _read()
     {
