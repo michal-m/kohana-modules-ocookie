@@ -66,6 +66,11 @@ class OCookie
 	protected $_httponly = TRUE;
 
     /**
+     * @var  boolean  Automatically serialize and unserialize cookie value
+     */
+    protected $_serialize = FALSE;
+
+    /**
      * @var  boolean  Encrypt cookie
      */
     protected $_encrypted = FALSE;
@@ -136,6 +141,11 @@ class OCookie
             $this->_httponly = (bool) $config['httponly'];
         }
 
+        if (isset($config['serialize']))
+        {
+            $this->_serialize = (bool) $config['serialize'];
+        }
+
         if (isset($config['encrypted']))
         {
             if ($config['encrypted'] === TRUE)
@@ -150,6 +160,34 @@ class OCookie
 
         // Read the cookie
         $this->_read();
+    }
+
+    /**
+     * OCookie object is rendered to a serialized string. If encryption is
+     * enabled, the cookie value will be encrypted.
+     *
+     *     echo $cookie;
+     *
+     * @return  string
+     * @uses    Encrypt::encode
+     */
+    public function __toString()
+    {
+        $value = $this->_value;
+
+        // Serialize the value
+        if ($this->_serialize OR $this->_encrypted)
+        {
+            $value = serialize($value);
+        }
+
+        if ($this->_encrypted)
+        {
+            // Encrypt the data using the default key
+            $value = Encrypt::instance($this->_encrypted)->encode($value);
+        }
+
+        return $value;
     }
 
 	/**
@@ -181,6 +219,7 @@ class OCookie
 	public function set($value, $lifetime = NULL)
 	{
         $this->_value = $value;
+        $value = $this->__toString();
 
 		if ($lifetime === NULL)
 		{
@@ -245,28 +284,48 @@ class OCookie
             return;
 		}
 
-		// Get the cookie value
-		$cookie = $_COOKIE[$this->_name];
+        try
+        {
+            // Get the cookie value
+            $cookie = $_COOKIE[$this->_name];
 
-		// Find the position of the split between salt and contents
-		$split = strlen(Cookie::salt($this->_name, NULL));
+            // Find the position of the split between salt and contents
+            $split = strlen(Cookie::salt($this->_name, NULL));
 
-		if (isset($cookie[$split]) AND $cookie[$split] === '~')
-		{
-			// Separate the salt and the value
-			list ($hash, $value) = explode('~', $cookie, 2);
+            if (isset($cookie[$split]) AND $cookie[$split] === '~')
+            {
+                // Separate the salt and the value
+                list ($hash, $value) = explode('~', $cookie, 2);
 
-			if (Cookie::salt($this->_name, $value) === $hash)
-			{
-				// Cookie signature is valid
-				$this->_value = $value;
-                $this->_loaded = TRUE;
-                return;
-			}
+                if (Cookie::salt($this->_name, $value) === $hash)
+                {
+                    // Cookie signature is valid
+                    if ($this->_encrypted)
+                    {
+                        // Decrypt the value
+                        $value = Encrypt::instance($this->_encrypted)->decode($value);
+                    }
 
-			// The cookie signature is invalid, delete it
-			$this->delete();
-		}
+                    if ($this->_encrypted OR $this->_serialize)
+                    {
+                        // Unserialize the value
+                        $value = unserialize($value);
+                    }
+
+                    $this->_value = $value;
+                    $this->_loaded = TRUE;
+                }
+                else
+                {
+                    // The cookie signature is invalid, delete it
+                    $this->delete();
+                }
+            }
+        }
+        catch (Exception $e)
+        {
+            throw new Kohana_Exception('Error reading cookie data.');
+        }
 
 		$this->_value = NULL;
     }

@@ -13,7 +13,8 @@ return array(
      * string   domain      cookie domain
      * boolean  secure      whether the cookie is to be served only over HTTPS
      * boolean  httponly    whether the cookie is to be available to JS or not
-     * boolean  encrypted   whether to encrypt session data
+     * boolean  serialize   whether to automatically serialize and unserialize cookie value
+     * boolean  encrypted   whether to encrypt session data (overrides serialize setting)
      */
     'default' => array(
         'lifetime'      => Cookie::$expiration,
@@ -21,6 +22,7 @@ return array(
         'domain'        => Cookie::$domain,
         'secure'        => Cookie::$secure,
         'httponly'      => Cookie::$httponly,
+        'serialize'     => FALSE,
         'encrypted'     => FALSE,   // or encryption setting name
     ),
 );
