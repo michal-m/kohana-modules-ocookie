@@ -187,7 +187,7 @@ class OCookie
             $value = Encrypt::instance($this->_encrypted)->encode($value);
         }
 
-        return $value;
+        return (string) $value;
     }
 
 	/**
