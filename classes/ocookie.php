@@ -71,6 +71,11 @@ class OCookie
     protected $_value;
 
     /**
+     * @var  boolean  Is cookie loaded
+     */
+    protected $_loaded = FALSE;
+
+    /**
      * Initiates the cookie.
      *
      * [!!] Cookies can only be created using the [OCookie::instance] method.
@@ -199,6 +204,17 @@ class OCookie
 	}
 
     /**
+     * Returns `$this->_loaded` value which is set on true when successfully
+     * loaded a cookie.
+     *
+     * @return boolean
+     */
+    public function loaded()
+    {
+        return $this->_loaded;
+    }
+
+    /**
      * Reads a signed cookie's value. Cookies without signatures will not be
      * read. If the cookie signature is present, but invalid, the cookie will be
      * deleted.
@@ -212,6 +228,7 @@ class OCookie
 		{
 			// The cookie does not exist
 			$this->_value = NULL;
+            return;
 		}
 
 		// Get the cookie value
@@ -229,6 +246,8 @@ class OCookie
 			{
 				// Cookie signature is valid
 				$this->_value = $value;
+                $this->_loaded = TRUE;
+                return;
 			}
 
 			// The cookie signature is invalid, delete it
