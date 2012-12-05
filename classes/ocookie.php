@@ -86,6 +86,21 @@ class OCookie
     protected $_loaded = FALSE;
 
     /**
+     * @var  boolean  Is cookie value corrupted
+     */
+    protected $_corrupted = FALSE;
+
+    /**
+     * @var  int      Read error code
+     */
+    protected $_error;
+
+    /**
+     * @var  string   Read error message
+     */
+    protected $_error_msg;
+
+    /**
      * Initiates the cookie.
      *
      * [!!] Cookies can only be created using the [OCookie::instance] method.
@@ -190,6 +205,17 @@ class OCookie
         return (string) $value;
     }
 
+    /**
+     * Returns `$this->_corrupted` value which is set to `TRUE` when there were
+     * errors when reading the cookie.
+     *
+     * @return boolean
+     */
+    public function corrupted()
+    {
+        return $this->_corrupted;
+    }
+
 	/**
 	 * Deletes a cookie by making the value NULL and expiring it.
 	 *
@@ -209,6 +235,28 @@ class OCookie
 
     /**
      * Returns `$this->_loaded` value which is set on true when successfully
+     * loaded a cookie.
+     *
+     * @return mixed
+     */
+    public function error($all = FALSE)
+    {
+        if ($all)
+        {
+            $error = array(
+                'code'      => $this->_error,
+                'message'   => $this->_error_msg,
+            );
+        }
+        else
+        {
+            $error = $this->_error_msg;
+        }
+        return $error;
+    }
+
+    /**
+     * Returns `$this->_loaded` value which is set to `TRUE` when successfully
      * loaded a cookie.
      *
      * @return boolean
@@ -325,9 +373,11 @@ class OCookie
         }
         catch (Exception $e)
         {
-            throw new Kohana_Exception('Error reading cookie data.');
+            $this->_loaded = FALSE;
+            $this->_corrupted = TRUE;
+            $this->_error = $e->getCode();
+            $this->_error_msg = $e->getMessage();
+    		$this->_value = NULL;
         }
-
-		$this->_value = NULL;
     }
 }
