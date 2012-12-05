@@ -61,6 +61,67 @@ return array(
 
 ## Usage examples
 
+### Get an instance of a pre-configured cookie
+
+```php
+$cookie = OCookie::instance('my_cookie');
+```
+
+### Get cookie value
+
+```php
+if ($cookie->loaded())
+{
+    $cookie_value = $cookie->value();
+}
+```
+
+### Set a new pre-configured cookie
+
+```php
+$cookie->set('my_cookie_value');
+```
+
+### You can override cookie default lifetime when setting a new value
+
+```php
+$cookie->set('my_cookie_value', 43200);
+```
+
+### To delete a cookie simply...
+
+```php
+$cookie->delete();
+```
+
+### Automatically serialized and encrypted cookies
+
+If you configure your cookie to be automatically serialized (or encrypted) the
+value set doesn't have to be a string. E.g.:
+
+```php
+$cookie->set(array('red', 'blue'));
+```
+
+Automatic serialization also means, that the cookie will be automatically
+unserialized when reading.
+
+```php
+print_r($cookie->value());
+```
+
+The above will output:
+
+    Array
+    (
+        [0] => red
+        [1] => blue
+    )
+
+## Notes
+
+If there is no configuration available for a cookie you're trying to get an
+instance of, default Kohana_Cookie configuration will be used.
 
 ## Acknowledgements
 
