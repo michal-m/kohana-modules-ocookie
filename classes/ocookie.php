@@ -191,18 +191,32 @@ class OCookie
     }
 
 	/**
-	 * Gets the value of the cookie.
+	 * Deletes a cookie by making the value NULL and expiring it.
 	 *
-	 *     // Get the cookie value, or use "blue" if the cookie does not exist
-	 *     $cookie->get('blue');
+	 *     $cookie->delete();
 	 *
-	 * @param   mixed   default value to return
-	 * @return  string
+	 * @param   string   cookie name
+	 * @return  boolean
 	 */
-	public function get($default = NULL)
+	public function delete()
 	{
-		return isset($this->_value) ? $this->_value : $default;
+		// Remove the cookie
+		unset($_COOKIE[$this->_name]);
+
+		// Nullify the cookie and make it expire
+		return setcookie($this->_name, NULL, -86400, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
 	}
+
+    /**
+     * Returns `$this->_loaded` value which is set on true when successfully
+     * loaded a cookie.
+     *
+     * @return boolean
+     */
+    public function loaded()
+    {
+        return $this->_loaded;
+    }
 
 	/**
 	 * Sets a signed cookie. Note that all cookie values must be strings.
@@ -240,32 +254,18 @@ class OCookie
 	}
 
 	/**
-	 * Deletes a cookie by making the value NULL and expiring it.
+	 * Gets the value of the cookie.
 	 *
-	 *     $cookie->delete();
+	 *     // Get the cookie value, or use "blue" if the cookie does not exist
+	 *     $cookie->get('blue');
 	 *
-	 * @param   string   cookie name
-	 * @return  boolean
+	 * @param   mixed   default value to return
+	 * @return  string
 	 */
-	public function delete()
+	public function value($default = NULL)
 	{
-		// Remove the cookie
-		unset($_COOKIE[$this->_name]);
-
-		// Nullify the cookie and make it expire
-		return setcookie($this->_name, NULL, -86400, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
+		return isset($this->_value) ? $this->_value : $default;
 	}
-
-    /**
-     * Returns `$this->_loaded` value which is set on true when successfully
-     * loaded a cookie.
-     *
-     * @return boolean
-     */
-    public function loaded()
-    {
-        return $this->_loaded;
-    }
 
     /**
      * Reads a signed cookie's value. Cookies without signatures will not be
