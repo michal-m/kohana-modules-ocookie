@@ -17,7 +17,7 @@ methods, where each one is configurable on its own.
 ## Installation
 
 1. Copy and paste files and folders to `MODPATH/ocookie`.
-2. (Optional) Copy `MODPATH/ocookie/config/sessions.php` to your `APPPATH/config` folder.
+2. (Optional) Copy `MODPATH/ocookie/config/ocookie.php` to your `APPPATH/config` folder.
 3. Add this entry under `Kohana::modules` array in `APPPATH/bootstrap.php`:
 
 ```php
@@ -26,7 +26,7 @@ methods, where each one is configurable on its own.
 
 ## Configuration
 
-You can configure your cookies in your `APPPATH/config/sessions.php` file.
+You can configure your cookies in your `APPPATH/config/ocookie.php` file.
 The configuration is very basic and very similar to what properties
 Kohana_Cookie static class has:
 
@@ -45,7 +45,7 @@ return array(
      * boolean  secure      whether the cookie is to be served only over HTTPS
      * boolean  httponly    whether the cookie is to be available to JS or not
      * boolean  serialize   whether to automatically serialize and unserialize cookie value
-     * boolean  encrypted   whether to encrypt session data (overrides serialize setting)
+     * boolean  encrypted   whether to encrypt cookie data (overrides serialize setting)
      */
     'default' => array(
         'lifetime'      => Cookie::$expiration,
