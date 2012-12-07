@@ -64,7 +64,7 @@ return array(
 ### Get an instance of a pre-configured cookie
 
 ```php
-$cookie = OCookie::instance('my_cookie');
+$cookie = oCookie::instance('my_cookie');
 ```
 
 ### Get cookie value
