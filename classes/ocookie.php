@@ -292,13 +292,16 @@ class oCookie
 		if ($lifetime !== 0)
 		{
 			// The lifetime is expected to be a UNIX timestamp
+			// To do this, we take the user-configured lifetime in seconds,
+			// and add the current time to that. The result is a UNIX timestamp
+			// that is precisely $lifetime seconds in the future.
 			$lifetime += time();
 		}
 
 		// Add the salt to the cookie value
 		$value = Cookie::salt($this->_name, $value).'~'.$value;
 
-		return setcookie($this->_name, $value, $this->_lifetime, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
+		return setcookie($this->_name, $value, $lifetime, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
 	}
 
 	/**
