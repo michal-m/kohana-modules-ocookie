@@ -1,38 +1,38 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * oCookie class.
+ * OCookie class.
  *
- * @package    oCookie
+ * @package    OCookie
  * @author     Kohana Team, Michał Musiał
- * @copyright  (c) 2008-2011 Kohana Team, modifications (c) 2012 Michał Musiał
+ * @copyright  (c) 2008-2011 Kohana Team, modifications (c) 2012-2013 Michał Musiał
  * @license    http://kohanaframework.org/license
  */
-class oCookie
+class OCookie
 {
     /**
-     * @var  array  oCookie instances
+     * @var  array  OCookie instances
      */
     public static $instances = array();
 
     /**
-     * Creates a singleton oCookie of a given name.
+     * Creates a singleton OCookie of a given name.
      *
-     *     $cookie = oCookie::instance('my_cookie');
+     *     $cookie = OCookie::instance('my_cookie');
      *
      * @param   string   name of a cookie
      * @param   array    configuration
-     * @return  oCookie
+     * @return  OCookie
      */
     public static function instance($name, array $config = NULL)
     {
-        if ( ! isset(oCookie::$instances[$name]))
+        if ( ! isset(OCookie::$instances[$name]))
         {
             // Create a new cookie instance
-            oCookie::$instances[$name] = new oCookie($name, $config);
+            OCookie::$instances[$name] = new OCookie($name, $config);
         }
 
-        return oCookie::$instances[$name];
+        return OCookie::$instances[$name];
     }
 
 	/**
@@ -103,11 +103,11 @@ class oCookie
     /**
      * Initiates the cookie.
      *
-     * [!!] Cookies can only be created using the [oCookie::instance] method.
+     * [!!] Cookies can only be created using the [OCookie::instance] method.
      *
      * @param   string  name
      * @param   array   configuration
-     * @return  oCookie
+     * @return  OCookie
      * @uses    Kohana::$config
      */
     protected function __construct($name, array $config = NULL)
@@ -178,7 +178,7 @@ class oCookie
     }
 
     /**
-     * oCookie object is rendered to a serialized string. If encryption is
+     * OCookie object is rendered to a serialized string. If encryption is
      * enabled, the cookie value will be encrypted.
      *
      *     echo $cookie;
@@ -292,13 +292,16 @@ class oCookie
 		if ($lifetime !== 0)
 		{
 			// The lifetime is expected to be a UNIX timestamp
+			// To do this, we take the user-configured lifetime in seconds,
+			// and add the current time to that. The result is a UNIX timestamp
+			// that is precisely $lifetime seconds in the future.
 			$lifetime += time();
 		}
 
 		// Add the salt to the cookie value
 		$value = Cookie::salt($this->_name, $value).'~'.$value;
 
-		return setcookie($this->_name, $value, $this->_lifetime, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
+		return setcookie($this->_name, $value, $lifetime, $this->_path, $this->_domain, $this->_secure, $this->_httponly);
 	}
 
 	/**
